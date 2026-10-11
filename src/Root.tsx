@@ -16,6 +16,8 @@ import { OutroScene } from "./scenes/OutroScene";
 import { StatsScene } from "./scenes/StatsScene";
 import { MSSpasticityFootDrop } from "./ms/MSSpasticityFootDrop";
 import { MS_VIDEO, totalFrames } from "./ms/config";
+import { CholesterolEarlyScreening } from "./chol/CholesterolEarlyScreening";
+import { CH_VIDEO, totalFrames as cholFrames } from "./chol/config";
 
 /**
  * Registers every composition shown in Remotion Studio.
@@ -161,6 +163,16 @@ export const RemotionRoot: React.FC = () => {
         height={MS_VIDEO.height}
         fps={MS_VIDEO.fps}
         durationInFrames={totalFrames(MS_VIDEO.fps)}
+      />
+
+      {/* Medical explainer: 1080×1920, 60 fps, 63 s. Timing lives in src/chol/config.ts */}
+      <Composition
+        id="CholesterolEarlyScreening"
+        component={CholesterolEarlyScreening}
+        width={CH_VIDEO.width}
+        height={CH_VIDEO.height}
+        fps={CH_VIDEO.fps}
+        durationInFrames={cholFrames(CH_VIDEO.fps)}
       />
 
       {/* @new-compositions: `npm run new -- <Name>` inserts registrations above this line. */}
