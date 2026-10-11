@@ -14,6 +14,8 @@ import { FeaturesScene } from "./scenes/FeaturesScene";
 import { IntroScene } from "./scenes/IntroScene";
 import { OutroScene } from "./scenes/OutroScene";
 import { StatsScene } from "./scenes/StatsScene";
+import { MSSpasticityFootDrop } from "./ms/MSSpasticityFootDrop";
+import { MS_VIDEO, totalFrames } from "./ms/config";
 
 /**
  * Registers every composition shown in Remotion Studio.
@@ -150,6 +152,16 @@ export const RemotionRoot: React.FC = () => {
           }}
         />
       </Folder>
+
+      {/* Medical explainer: 1080×1920, 60 fps, 70 s. Timing lives in src/ms/config.ts */}
+      <Composition
+        id="MSSpasticityFootDrop"
+        component={MSSpasticityFootDrop}
+        width={MS_VIDEO.width}
+        height={MS_VIDEO.height}
+        fps={MS_VIDEO.fps}
+        durationInFrames={totalFrames(MS_VIDEO.fps)}
+      />
 
       {/* @new-compositions: `npm run new -- <Name>` inserts registrations above this line. */}
     </>

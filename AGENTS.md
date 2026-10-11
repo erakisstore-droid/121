@@ -42,6 +42,18 @@ scripts/new-composition.mjs  `npm run new -- Name` scaffolder
 out/                       Render output (git-ignored)
 ```
 
+## MSSpasticityFootDrop (medical explainer, 1080×1920, 60 fps, 70 s)
+
+- Source: `src/ms/`. Timing is one shared sentence timeline: `BEATS` in
+  `src/ms/config.ts` (19 beats, seconds). All motion is expressed as fractions of
+  these beats via `at(beat, fraction)`, so retiming a beat to the narration moves
+  its visuals with it. Key phrases: `CAPTIONS`. SFX cues: `SFX_CUES` / `SFX_ENABLED`.
+- Acts (`src/ms/acts/Act1–6.tsx`) read absolute time and hand objects to each
+  other at beat boundaries; shared geometry lives in `src/ms/lib/geom.ts`.
+- Original attached screenshots are in `public/ms/asset-*.png` (byte-identical
+  copies; only the container zooms). Arabic font: Cairo (`public/ms/fonts`, OFL).
+- Render: `npx remotion render MSSpasticityFootDrop renders/ms-spasticity-foot-drop-70s.mp4 --crf=18`
+
 ## Commands
 
 | Task | Command |
