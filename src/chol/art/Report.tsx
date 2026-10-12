@@ -2,7 +2,7 @@ import type React from 'react';
 import {PAL} from '../config';
 import {mix} from '../../ms/lib/anim';
 
-export const REPORT_ROWS = ['Total cholesterol', 'LDL-C', 'HDL-C', 'Triglycerides'] as const;
+export const REPORT_ROWS = ['Total cholesterol', 'LDL-C', 'HDL-C', 'TG'] as const;
 
 /**
  * Minimal lab report on a cream card: header band, four labelled rows with BLANK

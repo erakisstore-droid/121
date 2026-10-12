@@ -56,11 +56,12 @@ out/                       Render output (git-ignored)
 
 ## CholesterolEarlyScreening (medical explainer, 1080×1920, 60 fps, 63 s)
 
-- Source: `src/chol/`. One timeline: `BEATS` in `src/chol/config.ts` (16 beats);
-  motion uses `at(beat, fraction)`. Key phrases: `CAPTIONS`.
-- `art/Artery.tsx` is the reusable artery section (wall, lumen, plaque inside the
-  wall, deterministic particle flow); `geom.ts` holds its shared state (`arteryAt`,
-  `plaqueH`) and all layout constants. It reuses `src/ms` fonts and UI primitives.
+- Source: `src/chol/`. One take across an infinite board: `PAGES` (1080×1920 design
+  areas placed on the board) and `CAMERA` keyframes live in `src/chol/config.ts`
+  with `BEATS` (16 beats), `CAPTIONS` (`|` = line break) and `SFX_CUES`.
+- Acts draw in page-local coordinates (`Board.tsx` → `<Page>`; `pageDelta()` for
+  threads that cross pages). `art/Artery.tsx` is the reusable artery section,
+  `art/hero.tsx` the stylized-3D tube and LDL particle; layout in `geom.ts`.
 - Original sources: `public/chol/source-*.png` (byte-identical; only the container zooms/pans).
 - Render: `npx remotion render CholesterolEarlyScreening renders/cholesterol-screening-63s.mp4 --crf=18`
 

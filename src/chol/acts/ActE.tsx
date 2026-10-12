@@ -1,8 +1,10 @@
 import type React from 'react';
 import {PAL, at} from '../config';
-import {LdlDot, LdlTag} from '../art/Artery';
-import {Check, Sneaker} from '../art/objects';
-import {CAL, DNA, TREE, calCell} from '../geom';
+import {pageDelta} from '../Board';
+import {LdlTag} from '../art/Artery';
+import {Ldl3D} from '../art/hero';
+import {Check} from '../art/objects';
+import {CALENDAR, CARE, DNA, NODES, TRACK, trackX} from '../geom';
 import {EASE, mix, ramp} from '../../ms/lib/anim';
 import {drawOn} from '../../ms/lib/paths';
 import {useAbsT} from '../../ms/lib/time';
@@ -17,125 +19,153 @@ const Person: React.FC<{x: number; y: number; r: number; o: number; you?: boolea
     </g>
   );
 
-/** Strand point: DNA (vertical helix) morphing into a calendar-strip edge (horizontal). */
+const RING_R = 30;
+const YEAR_WORD: Record<number, string> = {1: 'سنة', 2: 'سنتين', 3: 'سنين', 4: 'سنين', 5: 'سنوات'};
+const ringX = (j: number) => CALENDAR.x + ((j + 0.5) * CALENDAR.w) / CALENDAR.rings;
+
+/** Strand point: DNA helix (vertical) morphing into the calendar's binding rings. */
 const strandPt = (u: number, strand: 0 | 1, ph: number, k: number) => {
   const a = 2 * Math.PI * DNA.turns * u + ph + strand * Math.PI;
   const dna = {x: DNA.x + DNA.amp * Math.sin(a), y: DNA.y0 + (DNA.y1 - DNA.y0) * u};
-  const cal = {x: CAL.x1 - (CAL.x1 - CAL.x0) * u, y: CAL.y + strand * CAL.h};
-  return {x: mix(dna.x, cal.x, k), y: mix(dna.y, cal.y, k)};
+  const j = Math.min(CALENDAR.rings - 1, Math.floor(u * CALENDAR.rings));
+  const th = (u * CALENDAR.rings - j) * 2 * Math.PI + strand * Math.PI - Math.PI / 2;
+  const ring = {x: ringX(j) + Math.cos(th) * RING_R, y: CALENDAR.y + Math.sin(th) * RING_R};
+  return {x: mix(dna.x, ring.x, k), y: mix(dna.y, ring.y, k)};
 };
 
-/** Beats 12–13: DNA → family tree with an inherited LDL path; DNA strands become a calendar strip. */
+/** Beats 12–13 (page p5): DNA with two related nodes and an inherited LDL particle; helix → calendar rings; pages turn to 5 years. */
 export const ActE: React.FC<{from: number}> = ({from}) => {
   const t = useAbsT(from);
-  const draw = ramp(t, at(12, 0.02), at(12, 0.25));
-  const ph = (t - at(12, 0)) * 0.9;
-  const morph = ramp(t, at(13, 0), at(13, 0.2), EASE.inOut);
-  const n = 70;
+  const draw = ramp(t, at(12, 0.2), at(12, 0.45));
+  const ph = (t - at(12, 0)) * 0.9 * (1 - ramp(t, at(13, 0), at(13, 0.2)));
+  const morph = ramp(t, at(13, 0.02), at(13, 0.25), EASE.inOut);
+  const n = 96;
   const strand = (s: 0 | 1) =>
     Array.from({length: n + 1}, (_, i) => strandPt((i / n) * draw, s, ph, morph))
       .map((p, i) => `${i ? 'L' : 'M'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
       .join(' ');
-  const rungs = Array.from({length: 14}, (_, i) => (i + 0.5) / 14).filter((u) => u <= draw);
+  const rungs = Array.from({length: 16}, (_, i) => (i + 0.5) / 16).filter((u) => u <= draw);
 
-  // family tree
-  const tree = (k: number) => ramp(t, at(12, 0.15 + k * 0.08), at(12, 0.25 + k * 0.08));
-  const treeOut = ramp(t, at(13, 0), at(13, 0.12));
-  const midG = (TREE.g1[0].x + TREE.g1[1].x) / 2;
-  const lines = [
-    {d: `M ${TREE.g1[0].x} ${TREE.g1[0].y} L ${TREE.g1[1].x} ${TREE.g1[1].y}`, k: tree(0)},
-    {d: `M ${midG} ${TREE.g1[0].y} L ${TREE.parent.x} ${TREE.parent.y}`, k: tree(1)},
-    {d: `M ${TREE.parent.x} ${TREE.parent.y} L ${TREE.parent.x} 920 L ${TREE.you.x} 920 L ${TREE.you.x} ${TREE.you.y}`, k: tree(2)},
-    {d: `M ${TREE.parent.x} 920 L ${TREE.sib.x} 920 L ${TREE.sib.x} ${TREE.sib.y}`, k: tree(2)},
-  ];
-  const branches = [
-    {d: `M ${DNA.x + 50} ${TREE.g1[0].y} L ${TREE.g1[0].x - 60} ${TREE.g1[0].y}`, k: tree(0)},
-    {d: `M ${DNA.x + 50} ${TREE.parent.y} L ${TREE.parent.x - 60} ${TREE.parent.y}`, k: tree(1)},
-    {d: `M ${DNA.x + 50} ${TREE.you.y} L ${TREE.you.x - 72} ${TREE.you.y}`, k: tree(2)},
-  ];
-  // inherited LDL path: grandparent → parent → you
-  const inh = ramp(t, at(12, 0.4), at(12, 0.78), EASE.inOut);
-  const route = [TREE.g1[0], {x: midG, y: TREE.g1[0].y}, TREE.parent, {x: TREE.parent.x, y: 920}, {x: TREE.you.x, y: 920}, {x: TREE.you.x + 52, y: TREE.you.y - 52}];
-  const seg = inh * (route.length - 1);
-  const si = Math.min(route.length - 2, Math.floor(seg));
-  const sf = seg - si;
-  const ldl = {x: mix(route[si].x, route[si + 1].x, sf), y: mix(route[si].y, route[si + 1].y, sf)};
-  const ldlO = ramp(t, at(12, 0.36), at(12, 0.42)) * (1 - treeOut);
-  const shoe = ramp(t, at(12, 0.75), at(12, 0.88)) * (1 - treeOut);
+  // two related nodes + inherited LDL particle
+  const nodeIn = (k: number) => ramp(t, at(12, 0.4 + k * 0.1), at(12, 0.5 + k * 0.1));
+  const nodesOut = ramp(t, at(13, 0), at(13, 0.12));
+  const linkP = `M ${DNA.x + 60} ${NODES.parent.y} L ${NODES.parent.x - 70} ${NODES.parent.y}`;
+  const linkY = `M ${DNA.x + 60} ${NODES.you.y} L ${NODES.you.x - 80} ${NODES.you.y}`;
+  const famD = `M ${NODES.parent.x} ${NODES.parent.y + 66} L ${NODES.you.x} ${NODES.you.y - 78}`;
+  const inh = ramp(t, at(12, 0.62), at(12, 0.9), EASE.inOut);
+  const ldl = {x: NODES.parent.x + 92, y: mix(NODES.parent.y, NODES.you.y, inh)};
+  const ldlO = ramp(t, at(12, 0.58), at(12, 0.64)) * (1 - nodesOut);
 
-  // calendar strip
-  const calIn = ramp(t, at(13, 0.15), at(13, 0.3));
-  const calOut = ramp(t, at(14, 0), at(14, 0.06));
-  const cw = (CAL.x1 - CAL.x0) / CAL.cells;
-  const m0 = ramp(t, at(13, 0.22), at(13, 0.32));
-  const travel = ramp(t, at(13, 0.32), at(13, 0.6), EASE.inOut);
-  const m5 = ramp(t, at(13, 0.58), at(13, 0.66));
-  const bracket = ramp(t, at(13, 0.6), at(13, 0.72));
-  const closer = ramp(t, at(13, 0.78), at(13, 0.9));
-  const dnaOpacity = 1 - calOut;
+  // calendar: body opens under the rings, pages turn 1 → 5 years
+  const body = ramp(t, at(13, 0.18), at(13, 0.3), EASE.out);
+  const flips = [0, 1, 2, 3].map((i) => ramp(t, at(13, 0.32 + i * 0.09), at(13, 0.4 + i * 0.09), EASE.inOut));
+  const years = flips.reduce((a, b) => a + b, 0) + 1;
+  const page = Math.min(5, Math.floor(years + 1e-6));
+  const flipping = flips.findIndex((f) => f > 0 && f < 1);
+  const trackIn = ramp(t, at(13, 0.28), at(13, 0.38));
+  const nearer = ramp(t, at(13, 0.78), at(13, 0.9));
+  const H = CALENDAR.h * body;
+  const pageNum = (p: number, o: number) => (
+    <g opacity={o}>
+      <text x={CALENDAR.x + CALENDAR.w / 2} y={CALENDAR.y + 330} textAnchor="middle" fontFamily="Cairo" fontWeight={800} fontSize={200} fill={PAL.charcoal}>
+        {p}
+      </text>
+    </g>
+  );
+
+  // beat 14: the track runs up the board to the care timeline on page p1
+  const d1 = pageDelta('p1', 'p5');
+  const careY = CARE.y + d1.y;
+  const toP1 = `M ${TRACK.xEnd} ${TRACK.y} L 90 ${TRACK.y} C 50 ${TRACK.y} 50 ${TRACK.y - 40} 50 ${TRACK.y - 80} L 50 ${careY + 40} C 50 ${careY} 70 ${careY} 110 ${careY} L ${CARE.x0} ${careY}`;
+  const up = ramp(t, at(14, 0), at(14, 0.3), EASE.inOut);
+  const upOut = ramp(t, at(15, 0), at(15, 0.2));
 
   return (
     <>
-      <svg width={1080} height={1920} style={{position: 'absolute', inset: 0}}>
-        {/* strands + rungs (rungs fade while strands become the calendar edges) */}
-        <g opacity={dnaOpacity}>
-          {calIn > 0.001 ? (
-            <g opacity={calIn * (1 - calOut)}>
-              <rect x={CAL.x0} y={CAL.y} width={CAL.x1 - CAL.x0} height={CAL.h} rx={18} fill={PAL.offWhite} />
-              <rect x={CAL.x0} y={CAL.y} width={CAL.x1 - CAL.x0} height={34} rx={16} fill={PAL.beige} />
-              {Array.from({length: CAL.cells - 1}, (_, i) => (
-                <line key={i} x1={CAL.x0 + (i + 1) * cw} y1={CAL.y + 34} x2={CAL.x0 + (i + 1) * cw} y2={CAL.y + CAL.h} stroke={PAL.line} strokeWidth={3} />
-              ))}
-            </g>
-          ) : null}
-          <path d={strand(0)} fill="none" stroke={PAL.charcoal} strokeWidth={7} strokeLinecap="round" />
-          <path d={strand(1)} fill="none" stroke={PAL.charcoal} strokeWidth={7} strokeLinecap="round" />
-          {morph < 0.999
-            ? rungs.map((u) => {
-                const a = strandPt(u, 0, ph, morph);
-                const b = strandPt(u, 1, ph, morph);
-                return <line key={u} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={PAL.beige} strokeWidth={8} strokeLinecap="round" opacity={1 - morph} />;
-              })
-            : null}
-          {calIn > 0.001 ? (
-            <g opacity={calIn * (1 - calOut)}>
-              <Check cx={calCell(0)} cy={CAL.y + 88} r={34} opacity={m0} />
-              {travel > 0.001 && travel < 1 ? <circle cx={mix(calCell(0), calCell(5), travel)} cy={CAL.y + 88} r={12} fill={PAL.charcoal} /> : null}
-              <Check cx={calCell(5)} cy={CAL.y + 88} r={34} opacity={m5} />
-              <Check cx={calCell(2)} cy={CAL.y + 88} r={30} opacity={closer * 0.85} dashed />
-              {bracket > 0.001 ? (
-                <path
-                  d={`M ${calCell(0)} ${CAL.y + CAL.h + 18} L ${calCell(0)} ${CAL.y + CAL.h + 40} L ${calCell(5)} ${CAL.y + CAL.h + 40} L ${calCell(5)} ${CAL.y + CAL.h + 18}`}
-                  fill="none"
-                  stroke={PAL.charcoal}
-                  strokeWidth={5}
-                  strokeLinejoin="round"
-                  {...drawOn(`M ${calCell(0)} ${CAL.y + CAL.h + 18} L ${calCell(0)} ${CAL.y + CAL.h + 40} L ${calCell(5)} ${CAL.y + CAL.h + 40} L ${calCell(5)} ${CAL.y + CAL.h + 18}`, bracket)}
-                />
-              ) : null}
-            </g>
-          ) : null}
-        </g>
-        {/* family tree */}
-        {treeOut < 1 ? (
-          <g opacity={1 - treeOut}>
-            {[...branches, ...lines].map((l, i) => (l.k > 0.001 ? <path key={i} d={l.d} fill="none" stroke={PAL.charcoal} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" {...drawOn(l.d, l.k)} /> : null))}
-            <Person x={TREE.g1[0].x} y={TREE.g1[0].y} r={56} o={tree(0)} />
-            <Person x={TREE.g1[1].x} y={TREE.g1[1].y} r={56} o={tree(0)} />
-            <Person x={TREE.parent.x} y={TREE.parent.y} r={58} o={tree(1)} />
-            <Person x={TREE.you.x} y={TREE.you.y} r={68} o={tree(2)} you />
-            <Person x={TREE.sib.x} y={TREE.sib.y} r={56} o={tree(2)} />
-            <LdlDot x={ldl.x} y={ldl.y} r={14} opacity={ldlO} />
-            <LdlTag x={ldl.x} y={ldl.y} opacity={ldlO} />
-            <Sneaker cx={TREE.you.x - 10} cy={TREE.you.y + 160} s={72} opacity={shoe} />
+      <svg width={1080} height={1920} style={{position: 'absolute', inset: 0, overflow: 'visible'}}>
+        {up > 0.001 && upOut < 1 ? <path d={toP1} fill="none" stroke={PAL.charcoal} strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" opacity={1 - upOut} {...drawOn(toP1, up)} /> : null}
+        {/* calendar body + pages */}
+        {body > 0.001 ? (
+          <g>
+            <rect x={CALENDAR.x} y={CALENDAR.y} width={CALENDAR.w} height={H} rx={30} fill={PAL.beige} stroke={PAL.charcoal} strokeWidth={4} />
+            <rect x={CALENDAR.x + 18} y={CALENDAR.y + 30} width={CALENDAR.w - 36} height={Math.max(0, H - 48)} rx={22} fill={PAL.offWhite} stroke={PAL.charcoal} strokeWidth={3} />
+            {body > 0.95 ? (
+              <>
+                {/* next page underneath */}
+                {flipping >= 0 ? pageNum(flipping + 2, 1) : pageNum(page, 1)}
+                {/* turning page folds up toward the rings */}
+                {flipping >= 0 ? (
+                  <g>
+                    <rect
+                      x={CALENDAR.x + 18}
+                      y={CALENDAR.y + 30}
+                      width={CALENDAR.w - 36}
+                      height={(CALENDAR.h - 48) * Math.abs(1 - 2 * flips[flipping])}
+                      rx={22}
+                      fill={flips[flipping] < 0.5 ? PAL.offWhite : PAL.beige}
+                      stroke={PAL.charcoal}
+                      strokeWidth={3}
+                    />
+                    {flips[flipping] < 0.5 ? (
+                      <g transform={`translate(0 ${CALENDAR.y + 30}) scale(1 ${1 - 2 * flips[flipping]}) translate(0 ${-(CALENDAR.y + 30)})`}>{pageNum(flipping + 1, 1)}</g>
+                    ) : null}
+                  </g>
+                ) : null}
+              </>
+            ) : null}
+          </g>
+        ) : null}
+        {/* strands → rings */}
+        {draw > 0.001 ? (
+          <g>
+            <path d={strand(0)} fill="none" stroke={PAL.charcoal} strokeWidth={8} strokeLinecap="round" />
+            <path d={strand(1)} fill="none" stroke={PAL.charcoal} strokeWidth={8} strokeLinecap="round" opacity={0.92} />
+            {morph < 0.999
+              ? rungs.map((u) => {
+                  const a = strandPt(u, 0, ph, morph);
+                  const b = strandPt(u, 1, ph, morph);
+                  return <line key={u} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={PAL.beige} strokeWidth={9} strokeLinecap="round" opacity={1 - morph} />;
+                })
+              : null}
+          </g>
+        ) : null}
+        {/* nodes */}
+        {nodesOut < 1 ? (
+          <g opacity={1 - nodesOut}>
+            {[linkP, linkY].map((d, i) => (
+              <path key={d} d={d} fill="none" stroke={PAL.charcoal} strokeWidth={4} strokeLinecap="round" {...drawOn(d, nodeIn(i))} />
+            ))}
+            <path d={famD} fill="none" stroke={PAL.charcoal} strokeWidth={4} strokeLinecap="round" strokeDasharray="10 9" opacity={nodeIn(1)} />
+            <Person x={NODES.parent.x} y={NODES.parent.y} r={66} o={nodeIn(0)} />
+            <Person x={NODES.you.x} y={NODES.you.y} r={78} o={nodeIn(1)} you />
+            <Ldl3D x={ldl.x} y={ldl.y} r={18} opacity={ldlO} />
+            <LdlTag x={ldl.x} y={ldl.y - 6} opacity={ldlO} />
+          </g>
+        ) : null}
+        {/* follow-up track: 0 → 5 years, plus an individualized nearer marker */}
+        {trackIn > 0.001 ? (
+          <g opacity={trackIn}>
+            <line x1={TRACK.xStart} y1={TRACK.y} x2={TRACK.xEnd} y2={TRACK.y} stroke={PAL.charcoal} strokeWidth={5} strokeLinecap="round" />
+            {[0, 1, 2, 3, 4, 5].map((y) => (
+              <line key={y} x1={trackX(y)} y1={TRACK.y - 12} x2={trackX(y)} y2={TRACK.y + 12} stroke={PAL.charcoal} strokeWidth={4} strokeLinecap="round" />
+            ))}
+            <Check cx={trackX(0)} cy={TRACK.y} r={34} />
+            {years < 4.99 ? <circle cx={trackX(years - 1)} cy={TRACK.y} r={13} fill={PAL.charcoal} /> : null}
+            <Check cx={trackX(5)} cy={TRACK.y} r={34} opacity={ramp(years, 4.9, 5)} />
+            {nearer > 0.001 ? (
+              <g opacity={nearer}>
+                <path d={`M ${trackX(0)} ${TRACK.y - 40} Q ${trackX(1.25)} ${TRACK.y - 110} ${trackX(2.5)} ${TRACK.y - 40}`} fill="none" stroke={PAL.charcoal} strokeWidth={4} strokeDasharray="8 8" />
+                <Check cx={trackX(2.5)} cy={TRACK.y} r={30} dashed />
+              </g>
+            ) : null}
           </g>
         ) : null}
       </svg>
-      <Txt x={TREE.you.x - 120} y={TREE.you.y + 72} w={240} size={40} weight={800} opacity={tree(2) * (1 - treeOut)}>
-        أنت
+      <Txt x={CALENDAR.x} y={CALENDAR.y + 370} w={CALENDAR.w} size={64} weight={800} opacity={body > 0.95 && flipping < 0 ? 1 : 0}>
+        {YEAR_WORD[page]}
       </Txt>
-      <Txt x={(calCell(0) + calCell(5)) / 2 - 200} y={CAL.y + CAL.h + 50} w={400} size={46} weight={800} opacity={bracket * (1 - calOut)}>
-        5 سنوات
+      <Txt x={NODES.you.x - 130} y={NODES.you.y + 84} w={260} size={44} weight={800} opacity={nodeIn(1) * (1 - nodesOut)}>
+        أنت
       </Txt>
     </>
   );

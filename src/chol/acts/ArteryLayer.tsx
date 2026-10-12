@@ -1,6 +1,7 @@
 import type React from 'react';
 import {at} from '../config';
-import {ArterySection, LdlDot, LdlTag, flowParticles, innerTop} from '../art/Artery';
+import {ArterySection, LdlTag, flowParticles, innerTop} from '../art/Artery';
+import {Ldl3D} from '../art/hero';
 import {ENTRY, PLAQUE_X, arteryAt, entryProgress} from '../geom';
 import {mix, ramp} from '../../ms/lib/anim';
 import {useAbsT} from '../../ms/lib/time';
@@ -32,10 +33,15 @@ export const ArteryLayer: React.FC<{from: number}> = ({from}) => {
   const retained = ENTRY.filter((e) => entryProgress(t, e.k) >= 1).map((e) => ({x: PLAQUE_X + e.dx, v: e.v, o: 1, side: 'top' as const}));
 
   return (
-    <svg width={1080} height={1920} style={{position: 'absolute', inset: 0}}>
-      <ArterySection s={s} t={t} flow={{...FLOW, speed: 150}} retained={retained}>
-        {entering.map((e, i) => (e.p > 0.001 && e.p < 1 ? <LdlDot key={i} x={e.x} y={e.y} r={12 * Math.max(0.5, s.R / 140)} /> : null))}
-        {tag > 0.001 && tracked ? <LdlTag x={tracked.x} y={tracked.y} opacity={tag} /> : null}
+    <svg width={1080} height={1920} style={{position: 'absolute', inset: 0, overflow: 'visible'}} opacity={ramp(t, at(3, 0.22), at(3, 0.4))}>
+      <ArterySection s={s} t={t} flow={{...FLOW, speed: 150, opacity: ramp(t, at(3, 0.35), at(3, 0.55))}} retained={retained}>
+        {entering.map((e, i) => (e.p > 0.001 && e.p < 1 ? <Ldl3D key={i} x={e.x} y={e.y} r={14} /> : null))}
+        {tag > 0.001 && tracked ? (
+          <>
+            <Ldl3D x={tracked.x} y={tracked.y} r={15} opacity={tag} />
+            <LdlTag x={tracked.x} y={tracked.y} opacity={tag} />
+          </>
+        ) : null}
       </ArterySection>
     </svg>
   );

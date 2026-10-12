@@ -1,7 +1,8 @@
 import type React from 'react';
 import {PAL, at} from '../config';
 import {BrainOutline, Heart} from '../art/objects';
-import {arteryAt, yearsScroll} from '../geom';
+import {LdlDot} from '../art/Artery';
+import {YOUTH, arteryAt, youthX, yearsScroll} from '../geom';
 import {mix, ramp} from '../../ms/lib/anim';
 import {drawOn} from '../../ms/lib/paths';
 import {useAbsT} from '../../ms/lib/time';
@@ -26,12 +27,11 @@ export const ActB: React.FC<{from: number}> = ({from}) => {
 
   // passing-years ruler
   const rulerIn = ramp(t, at(4, 0.86), at(4, 0.96));
-  const rulerOut = ramp(t, at(7, 0), at(7, 0.14));
+  const rulerOut = ramp(t, at(6, 0), at(6, 0.12));
   const ry = outerBot + 52;
   const off = yearsScroll(t);
   const ticks: number[] = [];
   for (let x = 900 - (((-off % 48) + 48) % 48); x > 520; x -= 48) ticks.push(x);
-  const rewind = ramp(t, at(6, 0.05), at(6, 0.15)) * (1 - ramp(t, at(6, 0.75), at(6, 0.9)));
 
   // beat 5: branches to brain and heart, plus a small complication inset
   const br = ramp(t, at(5, 0.15), at(5, 0.45));
@@ -42,9 +42,21 @@ export const ActB: React.FC<{from: number}> = ({from}) => {
   const inset = ramp(t, at(5, 0.45), at(5, 0.6)) * (1 - ramp(t, at(5, 0.92), at(6, 0.1)));
   const clot = ramp(t, at(5, 0.58), at(5, 0.8));
 
+  // beat 6 youth timeline (continues into the source-A area in beat 7)
+  const youth = ramp(t, at(6, 0.05), at(6, 0.6));
+  const youthOut = t >= at(7, 0) ? 1 : 0;
+  const ticksOut = ramp(t, at(6, 0.92), at(7, 0));
+  const mini = ramp(t, at(6, 0.6), at(6, 0.8));
+  const youthD = `M ${YOUTH.x0} ${outerBot} C ${YOUTH.x0 + 60} ${outerBot}, ${YOUTH.x0 + 40} ${YOUTH.y}, ${YOUTH.x0 + 110} ${YOUTH.y} L ${YOUTH.x1} ${YOUTH.y}`;
+
   return (
     <>
-      <svg width={1080} height={1920} style={{position: 'absolute', inset: 0}}>
+      <svg width={1080} height={1920} style={{position: 'absolute', inset: 0, overflow: 'visible'}}>
+        <defs>
+          <clipPath id="cb-mini">
+            <circle cx={youthX(25)} cy={YOUTH.y - 160} r={88} />
+          </clipPath>
+        </defs>
         <Branch d={up} p={br} o={1 - bOut} />
         <Branch d={down} p={br} o={1 - bOut} />
         <BrainOutline cx={250} cy={560} s={88} opacity={organs * (1 - bOut)} />
@@ -81,15 +93,42 @@ export const ActB: React.FC<{from: number}> = ({from}) => {
             {ticks.map((x) => (
               <line key={x} x1={x} y1={ry - 14} x2={x} y2={ry} stroke={PAL.charcoal} strokeWidth={4} strokeLinecap="round" opacity={0.75} />
             ))}
-            <g transform={`translate(470 ${ry - 8})`} opacity={rewind}>
-              <path d="M 18 -18 A 22 22 0 1 0 22 8" fill="none" stroke={PAL.charcoal} strokeWidth={5} strokeLinecap="round" />
-              <path d="M 8 -26 L 20 -18 L 8 -8" fill="none" stroke={PAL.charcoal} strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" />
-            </g>
+          </g>
+        ) : null}
+        {/* beat 6: the artery's lower edge peels into a timeline running toward younger ages */}
+        {youth > 0.001 && youthOut < 1 ? (
+          <g opacity={1 - youthOut}>
+            <path d={youthD} fill="none" stroke={PAL.charcoal} strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" {...drawOn(youthD, youth)} />
+            {[60, 50, 40, 30, 20].map((a, i) => {
+              const k = ramp(t, at(6, 0.2 + i * 0.1), at(6, 0.3 + i * 0.1));
+              return (
+                <g key={a} opacity={k * (1 - ticksOut)}>
+                  <line x1={youthX(a)} y1={YOUTH.y - 14} x2={youthX(a)} y2={YOUTH.y + 14} stroke={PAL.charcoal} strokeWidth={4} strokeLinecap="round" />
+                  <text x={youthX(a)} y={YOUTH.y + 62} textAnchor="middle" fontFamily="Cairo" fontWeight={700} fontSize={40} fill={PAL.charcoal}>
+                    {a}
+                  </text>
+                </g>
+              );
+            })}
+            {mini > 0.001 ? (
+              <g opacity={mini * (1 - ticksOut)}>
+                <line x1={youthX(25)} y1={YOUTH.y} x2={youthX(25)} y2={YOUTH.y - 70} stroke={PAL.charcoal} strokeWidth={4} />
+                <circle cx={youthX(25)} cy={YOUTH.y - 160} r={92} fill={PAL.offWhite} stroke={PAL.charcoal} strokeWidth={5} />
+                <g clipPath="url(#cb-mini)">
+                  <rect x={youthX(25) - 100} y={YOUTH.y - 252} width={200} height={50} fill={PAL.offWhite} />
+                  <rect x={youthX(25) - 100} y={YOUTH.y - 202} width={200} height={84} fill={PAL.orangeDeep} />
+                  <path d={`M ${youthX(25) - 100} ${YOUTH.y - 202} L ${youthX(25) - 40} ${YOUTH.y - 202} C ${youthX(25) - 22} ${YOUTH.y - 202} ${youthX(25) - 18} ${YOUTH.y - 186} ${youthX(25)} ${YOUTH.y - 186} C ${youthX(25) + 18} ${YOUTH.y - 186} ${youthX(25) + 22} ${YOUTH.y - 202} ${youthX(25) + 40} ${YOUTH.y - 202} L ${youthX(25) + 100} ${YOUTH.y - 202} L ${youthX(25) + 100} ${YOUTH.y - 222} L ${youthX(25) - 100} ${YOUTH.y - 222} Z`} fill={PAL.beige} stroke={PAL.charcoal} strokeWidth={3} />
+                  <rect x={youthX(25) - 100} y={YOUTH.y - 118} width={200} height={30} fill={PAL.offWhite} />
+                  <line x1={youthX(25) - 100} y1={YOUTH.y - 118} x2={youthX(25) + 100} y2={YOUTH.y - 118} stroke={PAL.charcoal} strokeWidth={3} />
+                  <LdlDot x={youthX(25) - 50 + ((t * 60) % 100)} y={YOUTH.y - 150} r={9} />
+                </g>
+              </g>
+            ) : null}
           </g>
         ) : null}
       </svg>
       <Txt x={mix(560, 560, 0)} y={ry + 6} w={340} size={40} weight={700} opacity={rulerIn * (1 - rulerOut)} align="right">
-        {rewind > 0.5 ? 'رجوع للسنين الأولى' : 'مع مرور السنين'}
+        مع مرور السنين
       </Txt>
     </>
   );

@@ -2,62 +2,40 @@ import type {ArterySpec} from './art/Artery';
 import {at} from './config';
 import {EASE, mix, ramp} from '../ms/lib/anim';
 
-/** Age timeline runs right → left (RTL): younger at the right. */
+/* ---------- Page p1: tube, heart, age timeline, artery ---------- */
+/** Age timeline (beat 2) runs right → left (RTL): younger at the right. */
 export const AGE = {y: 1420, xYoung: 860, xOld: 130, a0: 10, a1: 60} as const;
-export const ageX = (a: number, y0: number = AGE.a0) => AGE.xYoung - ((a - y0) / (AGE.a1 - AGE.a0)) * (AGE.xYoung - AGE.xOld);
+export const ageX = (a: number) => AGE.xYoung - ((a - AGE.a0) / (AGE.a1 - AGE.a0)) * (AGE.xYoung - AGE.xOld);
+export const TUBE1 = {x: 175, y: 520, w: 200, h: 680} as const;
+export const HEART1 = {x: 720, y: 860, s: 160} as const;
 
-/** Magnifier lens (beat 3) → full artery reveal (beat 4). */
-export const lensAt = (t: number) => {
-  const open = ramp(t, at(3, 0), at(3, 0.25));
-  const reveal = ramp(t, at(4, 0), at(4, 0.09), EASE.inOut);
-  const from = {x: ageX(26), y: 1215, r: 48};
-  const to = {x: 495, y: 1000, r: 300};
-  return {
-    x: mix(from.x, to.x, open),
-    y: mix(from.y, to.y, open),
-    r: mix(mix(from.r, to.r, open), 1250, reveal),
-    ring: 1 - reveal,
-    open,
-  };
-};
-
-const BASE = {x0: 90, x1: 900, cy: 1000, R: 140, T: 72} as const;
+export const ARTERY_BASE = {x0: 90, x1: 900, cy: 1000, R: 140, T: 72} as const;
 export const PLAQUE_X = 470;
 
-/** Plaque protrusion (fraction of lumen radius) over the whole video. */
+/** Plaque protrusion (fraction of lumen radius). Grows over beats 4–5, then a slow plateau in beat 14. */
 export const plaqueH = (t: number) => {
   const build = 0.32 * ramp(t, at(4, 0.6), at(4, 1), EASE.soft);
   const grow = 0.2 * ramp(t, at(5, 0), at(5, 0.6), EASE.soft);
-  const rewind = (build + grow - 0.09) * ramp(t, at(6, 0.08), at(6, 0.75), EASE.inOut);
-  const later = 0.1 * ramp(t, at(14, 0.2), at(14, 0.75), (x) => 1 - (1 - x) ** 3);
-  return build + grow - rewind + later;
+  const later = 0.06 * ramp(t, at(14, 0.3), at(14, 0.85), (x) => 1 - (1 - x) ** 3);
+  return build + grow + later;
 };
 
-/** The single artery that carries the story; it shrinks to a strip and returns. */
-type Pose = {cy: number; sc: number};
-const mixPose = (a: Pose, b: Pose, k: number): Pose => ({cy: mix(a.cy, b.cy, k), sc: mix(a.sc, b.sc, k)});
-const FULL: Pose = {cy: BASE.cy, sc: 1};
-const STRIP: Pose = {cy: 1440, sc: 0.4};
-const LOW: Pose = {cy: 1330, sc: 0.62};
+/** The artery backbone; it moves lower in beats 15–16 to make room for the bubble. */
 export const arteryAt = (t: number): ArterySpec => {
-  let p = mixPose(FULL, STRIP, ramp(t, at(7, 0), at(7, 0.16)));
-  p = mixPose(p, FULL, ramp(t, at(14, 0), at(14, 0.16)));
-  p = mixPose(p, LOW, ramp(t, at(15, 0), at(15, 0.3)));
+  const down = ramp(t, at(15, 0), at(15, 0.3));
+  const sc = mix(1, 0.62, down);
   return {
-    x0: BASE.x0,
-    x1: BASE.x1,
-    cy: p.cy,
-    R: BASE.R * p.sc,
-    T: BASE.T * p.sc,
+    x0: ARTERY_BASE.x0,
+    x1: ARTERY_BASE.x1,
+    cy: mix(ARTERY_BASE.cy, 1330, down),
+    R: ARTERY_BASE.R * sc,
+    T: ARTERY_BASE.T * sc,
     plaques: [{x: PLAQUE_X, w: 175, h: plaqueH(t), side: 'top'}],
   };
 };
 
-/** "Passing years" ruler offset: forward through beats 4–5, rewinds in beat 6, forward again in beat 14. */
-export const yearsScroll = (t: number) => {
-  const seg = (a: number, b: number, v: number) => Math.max(0, Math.min(t, b) - a) * v;
-  return seg(at(4, 0.86), at(6, 0.05), 70) - seg(at(6, 0.1), at(6, 0.75), 300) + seg(at(14, 0.2), at(14, 1), 45);
-};
+/** "Passing years" ruler offset (beats 4–5). */
+export const yearsScroll = (t: number) => Math.max(0, Math.min(t, at(6, 0.05)) - at(4, 0.86)) * 70;
 
 /** LDL particles that cross the intima and stay inside the wall (beat 4). */
 export const ENTRY = [
@@ -68,15 +46,19 @@ export const ENTRY = [
 ] as const;
 export const entryProgress = (t: number, k: number) => ramp(t, at(4, 0.3 + k * 0.045), at(4, 0.42 + k * 0.045), EASE.inOut);
 
-/* Source A card (beat 7) */
-export const CARD_A = {x: 110, y: 470, w: 790} as const;
-export const MARK19 = {x: 495, y: 1135, r: 125} as const;
-export const TL8 = {y: 1250} as const;
-export const TUBE8 = {x: 680, y: 760, w: 96, h: 330} as const;
+/** Beat 6 youth timeline: peels off the artery's lower edge and runs right, into page p3. */
+export const YOUTH = {y: 1270, x0: 900, x1: 2260, a0: 60, a1: 15} as const;
+export const youthX = (a: number) => YOUTH.x0 + ((YOUTH.a0 - a) / (YOUTH.a0 - YOUTH.a1)) * (YOUTH.x1 - YOUTH.x0);
 
-/* Beats 9–11 */
-export const TUBE9 = {x: 110, y: 480, w: 92, h: 310} as const;
-export const REPORT = {x: 240, y: 540, w: 660, h: 760} as const;
+/* ---------- Page p3: source A dashboard ---------- */
+export const CARD_A = {x: 110, y: 470, w: 790} as const;
+export const CARD_A_SMALL = {x: 110, y: 470, w: 460} as const;
+export const MARK19 = {x: 495, y: 1135, r: 125} as const;
+export const MARK19_B = {x: 260, y: 1210, r: 92} as const;
+export const TUBE3 = {x: 640, y: 720, w: 170, h: 600} as const;
+
+/* ---------- Page p4: report ---------- */
+export const REPORT = {x: 140, y: 540, w: 760, h: 760} as const;
 export const REPORT_HEAD = 110;
 export const reportRowRect = (i: number) => {
   const rowH = (REPORT.h - REPORT_HEAD - 40) / 4;
@@ -84,18 +66,15 @@ export const reportRowRect = (i: number) => {
 };
 export const LDL_CARD = {x: 110, y: 480, w: 790, h: 190} as const;
 export const SCALE = {x0: 150, x1: 860, y: 745, tick: 0.66} as const;
-export const CARD_B = {x: 110, y: 830, w: 790} as const;
+export const CARD_B = {x: 110, y: 900, w: 790} as const;
 export const ASSESS = {x: 495, y: 1268} as const;
 
-/* Beats 12–13 */
-export const DNA = {x: 250, y0: 520, y1: 1060, amp: 46, turns: 3} as const;
-export const TREE = {
-  g1: [{x: 570, y: 560}, {x: 790, y: 560}],
-  parent: {x: 680, y: 790},
-  you: {x: 590, y: 1030},
-  sib: {x: 790, y: 1030},
-} as const;
-export const CAL = {x0: 130, x1: 860, y: 880, h: 140, cells: 8} as const;
-export const calCell = (i: number) => CAL.x1 - (i + 0.5) * ((CAL.x1 - CAL.x0) / CAL.cells);
-/* Beat 14 care timeline (above the artery) */
+/* ---------- Page p5: DNA + calendar ---------- */
+export const DNA = {x: 300, y0: 560, y1: 1120, amp: 50, turns: 3} as const;
+export const NODES = {parent: {x: 720, y: 640}, you: {x: 720, y: 1040}} as const;
+export const CALENDAR = {x: 190, y: 640, w: 700, h: 560, rings: 6} as const;
+export const TRACK = {y: 1350, xStart: 820, xEnd: 260} as const;
+export const trackX = (years: number) => mix(TRACK.xStart, TRACK.xEnd, years / 5);
+
+/* ---------- Page p1 (beats 14–16) ---------- */
 export const CARE = {x0: 420, x1: 880, y: 690} as const;
