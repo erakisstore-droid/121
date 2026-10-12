@@ -1,32 +1,33 @@
 import type React from 'react';
 import {PAL, at} from '../config';
 import {pageDelta} from '../Board';
-import {LdlTag} from '../art/Artery';
-import {Ldl3D} from '../art/hero';
-import {Check} from '../art/objects';
+import {LdlCluster} from '../art/hero';
+import {CalendarIcon, Check, DnaNode, FamilyNode, NodeDot} from '../art/objects';
 import {CALENDAR, CARE, DNA, NODES, TRACK, trackX} from '../geom';
 import {EASE, mix, ramp} from '../../ms/lib/anim';
 import {drawOn} from '../../ms/lib/paths';
 import {useAbsT} from '../../ms/lib/time';
 import {Txt} from '../../ms/ui/primitives';
 
-const Person: React.FC<{x: number; y: number; r: number; o: number; you?: boolean}> = ({x, y, r, o, you}) =>
-  o <= 0.001 ? null : (
-    <g opacity={o}>
-      <circle cx={x} cy={y} r={r} fill={PAL.offWhite} stroke={PAL.charcoal} strokeWidth={you ? 6 : 4} />
-      <circle cx={x} cy={y - r * 0.2} r={r * 0.24} fill={PAL.beige} />
-      <path d={`M ${x - r * 0.5} ${y + r * 0.55} C ${x - r * 0.45} ${y + r * 0.08}, ${x + r * 0.45} ${y + r * 0.08}, ${x + r * 0.5} ${y + r * 0.55} Z`} fill={PAL.beige} />
-    </g>
-  );
 
 const RING_R = 30;
+const TILT = (18 * Math.PI) / 180;
+const DNA_C = {x: DNA.x, y: (DNA.y0 + DNA.y1) / 2};
+/** Lean the helix (bottom-left → top-right), as on the style board. */
+const tilt = (p: {x: number; y: number}) => {
+  const dx = p.x - DNA_C.x;
+  const dy = p.y - DNA_C.y;
+  return {x: DNA_C.x + dx * Math.cos(TILT) - dy * Math.sin(TILT), y: DNA_C.y + dx * Math.sin(TILT) + dy * Math.cos(TILT)};
+};
+const NEAR = {x: 655, y: 1085, w: 245, h: 225} as const;
 const YEAR_WORD: Record<number, string> = {1: 'سنة', 2: 'سنتين', 3: 'سنين', 4: 'سنين', 5: 'سنوات'};
 const ringX = (j: number) => CALENDAR.x + ((j + 0.5) * CALENDAR.w) / CALENDAR.rings;
 
 /** Strand point: DNA helix (vertical) morphing into the calendar's binding rings. */
 const strandPt = (u: number, strand: 0 | 1, ph: number, k: number) => {
   const a = 2 * Math.PI * DNA.turns * u + ph + strand * Math.PI;
-  const dna = {x: DNA.x + DNA.amp * Math.sin(a), y: DNA.y0 + (DNA.y1 - DNA.y0) * u};
+  const raw = {x: DNA.x + DNA.amp * Math.sin(a), y: DNA.y0 + (DNA.y1 - DNA.y0) * u};
+  const dna = tilt(raw);
   const j = Math.min(CALENDAR.rings - 1, Math.floor(u * CALENDAR.rings));
   const th = (u * CALENDAR.rings - j) * 2 * Math.PI + strand * Math.PI - Math.PI / 2;
   const ring = {x: ringX(j) + Math.cos(th) * RING_R, y: CALENDAR.y + Math.sin(th) * RING_R};
@@ -49,11 +50,11 @@ export const ActE: React.FC<{from: number}> = ({from}) => {
   // two related nodes + inherited LDL particle
   const nodeIn = (k: number) => ramp(t, at(12, 0.4 + k * 0.1), at(12, 0.5 + k * 0.1));
   const nodesOut = ramp(t, at(13, 0), at(13, 0.12));
-  const linkP = `M ${DNA.x + 60} ${NODES.parent.y} L ${NODES.parent.x - 70} ${NODES.parent.y}`;
-  const linkY = `M ${DNA.x + 60} ${NODES.you.y} L ${NODES.you.x - 80} ${NODES.you.y}`;
-  const famD = `M ${NODES.parent.x} ${NODES.parent.y + 66} L ${NODES.you.x} ${NODES.you.y - 78}`;
+  const linkP = `M ${DNA.x + 110} ${NODES.parent.y} L ${NODES.parent.x - 86} ${NODES.parent.y}`;
+  const linkY = `M ${DNA.x + 70} ${NODES.you.y} L ${NODES.you.x - 86} ${NODES.you.y}`;
+  const famD = `M ${NODES.parent.x} ${NODES.parent.y + 86} L ${NODES.you.x} ${NODES.you.y - 86}`;
   const inh = ramp(t, at(12, 0.62), at(12, 0.9), EASE.inOut);
-  const ldl = {x: NODES.parent.x + 92, y: mix(NODES.parent.y, NODES.you.y, inh)};
+  const ldl = {x: NODES.parent.x + 112, y: mix(NODES.parent.y + 40, NODES.you.y - 40, inh)};
   const ldlO = ramp(t, at(12, 0.58), at(12, 0.64)) * (1 - nodesOut);
 
   // calendar: body opens under the rings, pages turn 1 → 5 years
@@ -87,6 +88,8 @@ export const ActE: React.FC<{from: number}> = ({from}) => {
         {/* calendar body + pages */}
         {body > 0.001 ? (
           <g>
+            <rect x={CALENDAR.x + 16} y={CALENDAR.y + 22} width={CALENDAR.w} height={H} rx={30} fill={PAL.charcoal} opacity={0.14} />
+            <path d={`M ${CALENDAR.x + 60} ${CALENDAR.y + H} L ${CALENDAR.x + 110} ${CALENDAR.y + 40} L ${CALENDAR.x + CALENDAR.w - 110} ${CALENDAR.y + 40} L ${CALENDAR.x + CALENDAR.w - 60} ${CALENDAR.y + H} Z`} fill={PAL.beige} opacity={0.6} />
             <rect x={CALENDAR.x} y={CALENDAR.y} width={CALENDAR.w} height={H} rx={30} fill={PAL.beige} stroke={PAL.charcoal} strokeWidth={4} />
             <rect x={CALENDAR.x + 18} y={CALENDAR.y + 30} width={CALENDAR.w - 36} height={Math.max(0, H - 48)} rx={22} fill={PAL.offWhite} stroke={PAL.charcoal} strokeWidth={3} />
             {body > 0.95 ? (
@@ -115,31 +118,40 @@ export const ActE: React.FC<{from: number}> = ({from}) => {
             ) : null}
           </g>
         ) : null}
-        {/* strands → rings */}
+        {/* strands → rings (cream ribbon with orange rungs) */}
         {draw > 0.001 ? (
           <g>
-            <path d={strand(0)} fill="none" stroke={PAL.charcoal} strokeWidth={8} strokeLinecap="round" />
-            <path d={strand(1)} fill="none" stroke={PAL.charcoal} strokeWidth={8} strokeLinecap="round" opacity={0.92} />
             {morph < 0.999
               ? rungs.map((u) => {
                   const a = strandPt(u, 0, ph, morph);
                   const b = strandPt(u, 1, ph, morph);
-                  return <line key={u} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={PAL.beige} strokeWidth={9} strokeLinecap="round" opacity={1 - morph} />;
+                  return <line key={u} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={PAL.orangeDeep} strokeWidth={10} strokeLinecap="round" opacity={1 - morph} />;
                 })
               : null}
+            {[0, 1].map((k) => (
+              <g key={k}>
+                <path d={strand(k as 0 | 1)} fill="none" stroke={PAL.charcoal} strokeWidth={mix(24, 10, morph)} strokeLinecap="round" />
+                <path d={strand(k as 0 | 1)} fill="none" stroke={k ? PAL.beige : PAL.offWhite} strokeWidth={mix(16, 4, morph)} strokeLinecap="round" />
+              </g>
+            ))}
+            {[0.28, 0.72].map((u, i) => {
+              const p = strandPt(u, 0, ph, 0);
+              return u <= draw ? <LdlCluster key={u} x={p.x + 30} y={p.y} r={30} opacity={1 - morph} rot={t * 10 + i * 40} /> : null;
+            })}
           </g>
         ) : null}
-        {/* nodes */}
+        {/* two related nodes: family + inherited (DNA) — an LDL cluster follows the inherited path */}
         {nodesOut < 1 ? (
           <g opacity={1 - nodesOut}>
             {[linkP, linkY].map((d, i) => (
               <path key={d} d={d} fill="none" stroke={PAL.charcoal} strokeWidth={4} strokeLinecap="round" {...drawOn(d, nodeIn(i))} />
             ))}
+            <NodeDot x={DNA.x + 110} y={NODES.parent.y} o={nodeIn(0)} />
+            <NodeDot x={DNA.x + 70} y={NODES.you.y} o={nodeIn(1)} />
             <path d={famD} fill="none" stroke={PAL.charcoal} strokeWidth={4} strokeLinecap="round" strokeDasharray="10 9" opacity={nodeIn(1)} />
-            <Person x={NODES.parent.x} y={NODES.parent.y} r={66} o={nodeIn(0)} />
-            <Person x={NODES.you.x} y={NODES.you.y} r={78} o={nodeIn(1)} you />
-            <Ldl3D x={ldl.x} y={ldl.y} r={18} opacity={ldlO} />
-            <LdlTag x={ldl.x} y={ldl.y - 6} opacity={ldlO} />
+            <FamilyNode cx={NODES.parent.x} cy={NODES.parent.y} r={86} opacity={nodeIn(0)} />
+            <DnaNode cx={NODES.you.x} cy={NODES.you.y} r={86} opacity={nodeIn(1)} />
+            <LdlCluster x={ldl.x} y={ldl.y} r={30} opacity={ldlO} rot={t * 20} />
           </g>
         ) : null}
         {/* follow-up track: 0 → 5 years, plus an individualized nearer marker */}
@@ -160,12 +172,21 @@ export const ActE: React.FC<{from: number}> = ({from}) => {
             ) : null}
           </g>
         ) : null}
+        {nearer > 0.001 ? (
+          <g opacity={nearer} transform={`rotate(6 ${NEAR.x + NEAR.w / 2} ${NEAR.y + NEAR.h / 2}) translate(0 ${(1 - nearer) * 40})`}>
+            <rect x={NEAR.x + 10} y={NEAR.y + 14} width={NEAR.w} height={NEAR.h} rx={24} fill={PAL.charcoal} opacity={0.14} />
+            <rect x={NEAR.x} y={NEAR.y} width={NEAR.w} height={NEAR.h} rx={24} fill={PAL.offWhite} stroke={PAL.charcoal} strokeWidth={4} />
+            <CalendarIcon cx={NEAR.x + 70} cy={NEAR.y + 72} s={56} />
+          </g>
+        ) : null}
       </svg>
+      <div style={{position: 'absolute', inset: 0, opacity: nearer, rotate: '6deg', transformOrigin: `${NEAR.x + NEAR.w / 2}px ${NEAR.y + NEAR.h / 2}px`, translate: `0 ${(1 - nearer) * 40}px`}}>
+        <Txt x={NEAR.x + 10} y={NEAR.y + 104} w={NEAR.w - 20} size={40} weight={800}>
+          أقرب حسب الخطورة
+        </Txt>
+      </div>
       <Txt x={CALENDAR.x} y={CALENDAR.y + 370} w={CALENDAR.w} size={64} weight={800} opacity={body > 0.95 && flipping < 0 ? 1 : 0}>
         {YEAR_WORD[page]}
-      </Txt>
-      <Txt x={NODES.you.x - 130} y={NODES.you.y + 84} w={260} size={44} weight={800} opacity={nodeIn(1) * (1 - nodesOut)}>
-        أنت
       </Txt>
     </>
   );

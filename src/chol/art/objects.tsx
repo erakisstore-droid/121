@@ -133,3 +133,89 @@ export const Check: React.FC<{cx: number; cy: number; r: number; opacity?: numbe
       {!dashed ? <path d={`M ${cx - r * 0.42} ${cy + r * 0.02} L ${cx - r * 0.1} ${cy + r * 0.32} L ${cx + r * 0.45} ${cy - r * 0.32}`} fill="none" stroke={C} strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" /> : null}
     </g>
   );
+
+/** Connection node on a thread: off-white dot with a charcoal ring. */
+export const NodeDot: React.FC<{x: number; y: number; o?: number; r?: number}> = ({x, y, o = 1, r = 11}) =>
+  o <= 0.001 ? null : <circle cx={x} cy={y} r={r} fill={W} stroke={C} strokeWidth={4} opacity={o} />;
+
+/** Line-art anatomical heart (style board): outline with vessels and a pulse accent. */
+export const HeartLine: React.FC<{cx: number; cy: number; s: number; opacity?: number; beat?: number}> = ({cx, cy, s, opacity = 1, beat = 0}) => {
+  if (opacity <= 0.001) return null;
+  const k = (s / 100) * (1 + 0.04 * beat);
+  return (
+    <g opacity={opacity} transform={`translate(${cx} ${cy}) scale(${k})`}>
+      <path
+        d="M -8 -52 C -48 -64 -84 -34 -80 6 C -76 46 -40 76 4 96 C 46 74 82 44 84 4 C 86 -30 64 -54 34 -52 C 22 -51 12 -46 4 -40"
+        fill={W}
+        stroke={C}
+        strokeWidth={5.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M -8 -52 C -10 -76 -2 -98 18 -104 C 36 -108 52 -98 54 -84 M 18 -104 L 22 -122 M 40 -100 L 50 -116 M -26 -58 C -34 -74 -32 -92 -22 -100" fill="none" stroke={C} strokeWidth={5.5} strokeLinecap="round" />
+      <path d="M -40 -14 C -26 10 -18 40 2 66 M 30 -30 C 18 -6 18 22 30 44" fill="none" stroke={C} strokeWidth={4} strokeLinecap="round" opacity={0.85} />
+      {beat > 0.05
+        ? [-1, 0, 1].map((i) => (
+            <line key={i} x1={92 + i * 4} y1={-70 + i * 26} x2={112 + i * 8} y2={-84 + i * 30} stroke={C} strokeWidth={5} strokeLinecap="round" opacity={beat} />
+          ))
+        : null}
+    </g>
+  );
+};
+
+/** Line-art brain inside a cream node. */
+export const BrainNode: React.FC<{cx: number; cy: number; r: number; opacity?: number}> = ({cx, cy, r, opacity = 1}) =>
+  opacity <= 0.001 ? null : (
+    <g opacity={opacity}>
+      <circle cx={cx} cy={cy} r={r} fill={W} stroke={C} strokeWidth={4} />
+      <g transform={`translate(${cx} ${cy}) scale(${r / 150})`}>
+        <path d="M -92 18 C -110 -30 -70 -78 -20 -80 C 10 -96 60 -88 80 -58 C 112 -40 112 6 92 26 C 88 52 56 64 30 56 C 14 70 -18 70 -34 56 C -66 64 -98 48 -92 18 Z" fill="none" stroke={C} strokeWidth={7} />
+        <path d="M -10 -78 C -16 -50 4 -38 -6 -14 M 40 -82 C 30 -56 52 -40 40 -18 M -60 -50 C -40 -34 -54 -10 -36 8 M 74 -20 C 50 -10 62 18 40 28 M 20 56 C 24 74 28 86 28 100" fill="none" stroke={C} strokeWidth={6} strokeLinecap="round" />
+      </g>
+    </g>
+  );
+
+/** Faceless person silhouette (for age progression). */
+export const PersonGlyph: React.FC<{x: number; y: number; h: number; opacity?: number}> = ({x, y, h, opacity = 1}) =>
+  opacity <= 0.001 ? null : (
+    <g opacity={opacity}>
+      <circle cx={x} cy={y - h + h * 0.12} r={h * 0.12} fill={C} />
+      <path d={`M ${x - h * 0.16} ${y - h * 0.72} L ${x + h * 0.16} ${y - h * 0.72} L ${x + h * 0.13} ${y - h * 0.32} L ${x + h * 0.09} ${y} L ${x - h * 0.09} ${y} L ${x - h * 0.13} ${y - h * 0.32} Z`} fill={C} />
+    </g>
+  );
+
+/** Family (three people) icon inside a cream node. */
+export const FamilyNode: React.FC<{cx: number; cy: number; r: number; opacity?: number}> = ({cx, cy, r, opacity = 1}) =>
+  opacity <= 0.001 ? null : (
+    <g opacity={opacity}>
+      <circle cx={cx} cy={cy} r={r} fill={W} stroke={C} strokeWidth={4} />
+      {[
+        [-0.36, 0.08, 0.5],
+        [0.36, 0.08, 0.5],
+        [0, 0.18, 0.62],
+      ].map(([dx, dy, k], i) => (
+        <g key={i}>
+          <circle cx={cx + dx * r} cy={cy - r * 0.3 + dy * r} r={r * 0.15 * k * 1.6} fill="none" stroke={C} strokeWidth={5} />
+          <path d={`M ${cx + dx * r - r * 0.24 * k * 1.4} ${cy + r * 0.45} C ${cx + dx * r - r * 0.22 * k * 1.4} ${cy + r * 0.02 + dy * r}, ${cx + dx * r + r * 0.22 * k * 1.4} ${cy + r * 0.02 + dy * r}, ${cx + dx * r + r * 0.24 * k * 1.4} ${cy + r * 0.45}`} fill="none" stroke={C} strokeWidth={5} strokeLinecap="round" />
+        </g>
+      ))}
+    </g>
+  );
+
+/** DNA glyph inside a cream node. */
+export const DnaNode: React.FC<{cx: number; cy: number; r: number; opacity?: number}> = ({cx, cy, r, opacity = 1}) => {
+  if (opacity <= 0.001) return null;
+  const h = r * 0.62;
+  const a = Array.from({length: 21}, (_, i) => i / 20);
+  const strand = (ph: number) => a.map((u, i) => `${i ? 'L' : 'M'} ${cx + Math.sin(u * Math.PI * 2 + ph) * r * 0.24} ${cy - h + 2 * h * u}`).join(' ');
+  return (
+    <g opacity={opacity}>
+      <circle cx={cx} cy={cy} r={r} fill={W} stroke={C} strokeWidth={4} />
+      <path d={strand(0)} fill="none" stroke={C} strokeWidth={5} strokeLinecap="round" />
+      <path d={strand(Math.PI)} fill="none" stroke={C} strokeWidth={5} strokeLinecap="round" />
+      {[0.15, 0.35, 0.65, 0.85].map((u) => (
+        <line key={u} x1={cx + Math.sin(u * Math.PI * 2) * r * 0.24} y1={cy - h + 2 * h * u} x2={cx - Math.sin(u * Math.PI * 2) * r * 0.24} y2={cy - h + 2 * h * u} stroke={C} strokeWidth={4} />
+      ))}
+    </g>
+  );
+};

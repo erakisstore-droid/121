@@ -1,6 +1,6 @@
 import type React from 'react';
 import {random} from 'remotion';
-import {PAL} from '../config';
+import {ART, PAL} from '../config';
 
 export type Plaque = {
   /** centre x of the plaque */
@@ -42,6 +42,13 @@ const sample = (s: ArterySpec, f: (x: number) => number, n = 60) =>
   });
 const pts = (a: readonly (readonly [number, number])[]) => a.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
 
+/** Deterministic foam-cell layout inside a plaque (u: −1…1 along, v: 0…1 depth). */
+const FOAM = Array.from({length: 26}, (_, i) => ({
+  u: (random(`fu-${i}`) * 2 - 1) * 0.95,
+  v: random(`fv-${i}`),
+  r: 9 + random(`fr-${i}`) * 9,
+}));
+
 export type Particle = {x: number; y: number; kind: 'ldl' | 'cell'; id: number};
 
 /**
@@ -65,15 +72,56 @@ export const flowParticles = (s: ArterySpec, t: number, count: number, ldlShare:
   });
 };
 
-/** LDL particle: beige sphere with a darker core ring, distinct from blood cells. */
-export const LdlDot: React.FC<{x: number; y: number; r?: number; opacity?: number}> = ({x, y, r = 12, opacity = 1}) => (
+/** LDL particle: small cream-yellow sphere, distinct from red blood cells. */
+export const LdlDot: React.FC<{x: number; y: number; r?: number; opacity?: number}> = ({x, y, r = 11, opacity = 1}) => (
   <g opacity={opacity}>
-    <circle cx={x} cy={y} r={r} fill={PAL.beige} stroke={PAL.charcoal} strokeWidth={3} />
-    <circle cx={x} cy={y} r={r * 0.42} fill="none" stroke={PAL.charcoal} strokeWidth={2} />
+    <circle cx={x} cy={y} r={r} fill="url(#art-ldl)" />
+    <circle cx={x - r * 0.3} cy={y - r * 0.35} r={r * 0.28} fill={PAL.offWhite} opacity={0.8} />
   </g>
 );
-export const Cell: React.FC<{x: number; y: number; opacity?: number}> = ({x, y, opacity = 1}) => (
-  <ellipse cx={x} cy={y} rx={16} ry={8} fill={PAL.offWhite} stroke={PAL.charcoal} strokeWidth={2} opacity={opacity} />
+/** Red blood cell: shaded biconcave disc. */
+export const Cell: React.FC<{x: number; y: number; opacity?: number; id?: number}> = ({x, y, opacity = 1, id = 0}) => {
+  const rx = 17;
+  const ry = 11 + (id % 3) * 1.5;
+  return (
+    <g opacity={opacity}>
+      <ellipse cx={x} cy={y} rx={rx} ry={ry} fill="url(#art-cell)" />
+      <ellipse cx={x + 1} cy={y + 1} rx={rx * 0.45} ry={ry * 0.4} fill={ART.cell} opacity={0.9} />
+    </g>
+  );
+};
+
+/** Shared gradient definitions for artery tissue and particles. */
+export const ArteryDefs: React.FC = () => (
+  <defs>
+    <radialGradient id="art-cell" cx="0.38" cy="0.35" r="0.7">
+      <stop offset="0" stopColor={ART.cellLight} />
+      <stop offset="1" stopColor={ART.cell} />
+    </radialGradient>
+    <radialGradient id="art-ldl" cx="0.38" cy="0.35" r="0.75">
+      <stop offset="0" stopColor={PAL.offWhite} />
+      <stop offset="0.5" stopColor={ART.plaque} />
+      <stop offset="1" stopColor={ART.plaqueDeep} />
+    </radialGradient>
+    <radialGradient id="art-foam" cx="0.38" cy="0.35" r="0.75">
+      <stop offset="0" stopColor={PAL.offWhite} />
+      <stop offset="0.55" stopColor={ART.plaque} />
+      <stop offset="1" stopColor={ART.plaqueDeep} />
+    </radialGradient>
+    <linearGradient id="art-wall-top" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stopColor={ART.wallLight} />
+      <stop offset="1" stopColor={ART.wallDeep} />
+    </linearGradient>
+    <linearGradient id="art-wall-bot" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stopColor={ART.wallDeep} />
+      <stop offset="1" stopColor={ART.wallLight} />
+    </linearGradient>
+    <linearGradient id="art-lumen" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stopColor={ART.lumenDark} />
+      <stop offset="0.5" stopColor={ART.lumenMid} />
+      <stop offset="1" stopColor={ART.lumenDark} />
+    </linearGradient>
+  </defs>
 );
 
 /** Small "LDL" tag that rides on a particle. */
@@ -122,18 +170,36 @@ export const ArterySection: React.FC<{
   return (
     <g opacity={opacity}>
       {/* walls */}
-      <polygon points={`${s.x0},${outerTop} ${s.x1},${outerTop} ${pts([...top].reverse())}`} fill={PAL.offWhite} />
-      <polygon points={`${s.x0},${outerBot} ${s.x1},${outerBot} ${pts([...bot].reverse())}`} fill={PAL.offWhite} />
+      <ArteryDefs />
+      <polygon points={`${s.x0},${outerTop} ${s.x1},${outerTop} ${pts([...top].reverse())}`} fill="url(#art-wall-top)" />
+      <polygon points={`${s.x0},${outerBot} ${s.x1},${outerBot} ${pts([...bot].reverse())}`} fill="url(#art-wall-bot)" />
       {[0.35, 0.65].map((k) => (
         <g key={k}>
-          <polyline points={pts(media(k, -1))} fill="none" stroke={PAL.line} strokeWidth={4} />
-          <polyline points={pts(media(k, 1))} fill="none" stroke={PAL.line} strokeWidth={4} />
+          <polyline points={pts(media(k, -1))} fill="none" stroke={ART.wallLight} strokeWidth={4} opacity={0.8} />
+          <polyline points={pts(media(k, 1))} fill="none" stroke={ART.wallLight} strokeWidth={4} opacity={0.8} />
         </g>
       ))}
       {/* lumen with flowing blood */}
-      <polygon points={lumen} fill={PAL.orangeDeep} />
+      <polygon points={lumen} fill="url(#art-lumen)" />
       {s.plaques.filter((p) => p.h > 0.005).map((p, i) => (
-        <polygon key={i} points={plaqueShape(p)} fill={PAL.beige} stroke={PAL.charcoal} strokeWidth={3} strokeLinejoin="round" />
+        <g key={i}>
+          <defs>
+            <clipPath id={`plq-${i}-${Math.round(s.cy)}`}>
+              <polygon points={plaqueShape(p)} />
+            </clipPath>
+          </defs>
+          <polygon points={plaqueShape(p)} fill={ART.plaque} stroke={PAL.charcoal} strokeWidth={3} strokeLinejoin="round" />
+          {/* foam-cell texture: lipid-laden spheres packed inside the plaque */}
+          <g clipPath={`url(#plq-${i}-${Math.round(s.cy)})`}>
+            {FOAM.map((f, j) => {
+              const x = p.x + f.u * p.w * 0.9;
+              const base = p.side === 'top' ? s.cy - s.R : s.cy + s.R;
+              const y = base + (p.side === 'top' ? 1 : -1) * (f.v * p.h * s.R * 0.9 - s.T * 0.2);
+              return <circle key={j} cx={x} cy={y} r={f.r * Math.max(0.6, s.R / 140)} fill="url(#art-foam)" opacity={0.95} />;
+            })}
+          </g>
+          <polygon points={plaqueShape(p)} fill="none" stroke={PAL.charcoal} strokeWidth={3} strokeLinejoin="round" />
+        </g>
       ))}
       {retained.map((r, i) => {
         const base = r.side === 'top' ? innerTop(s, r.x) : innerBottom(s, r.x);
@@ -141,22 +207,26 @@ export const ArterySection: React.FC<{
         return <LdlDot key={i} x={r.x} y={y} r={8} opacity={r.o} />;
       })}
       {particles.map((p) =>
-        p.x < s.x0 - 20 || p.x > s.x1 + 20 ? null : p.kind === 'ldl' ? <LdlDot key={p.id} x={p.x} y={p.y} opacity={flow?.opacity ?? 1} /> : <Cell key={p.id} x={p.x} y={p.y} opacity={flow?.opacity ?? 1} />,
+        p.x < s.x0 - 20 || p.x > s.x1 + 20 ? null : p.kind === 'ldl' ? <LdlDot key={p.id} x={p.x} y={p.y} opacity={flow?.opacity ?? 1} /> : <Cell key={p.id} id={p.id} x={p.x} y={p.y} opacity={flow?.opacity ?? 1} />,
       )}
       {/* intima (thin inner lining) drawn over plaque so plaque reads as inside the wall */}
-      <polyline points={pts(top)} fill="none" stroke={PAL.offWhite} strokeWidth={8} />
-      <polyline points={pts(top)} fill="none" stroke={PAL.charcoal} strokeWidth={3.5} />
-      <polyline points={pts(bot)} fill="none" stroke={PAL.offWhite} strokeWidth={8} />
-      <polyline points={pts(bot)} fill="none" stroke={PAL.charcoal} strokeWidth={3.5} />
+      <polyline points={pts(top)} fill="none" stroke={ART.wallLight} strokeWidth={8} />
+      <polyline points={pts(top)} fill="none" stroke={PAL.charcoal} strokeWidth={3} />
+      <polyline points={pts(bot)} fill="none" stroke={ART.wallLight} strokeWidth={8} />
+      <polyline points={pts(bot)} fill="none" stroke={PAL.charcoal} strokeWidth={3} />
       <line x1={s.x0} y1={outerTop} x2={s.x1} y2={outerTop} stroke={PAL.charcoal} strokeWidth={4.5} />
       <line x1={s.x0} y1={outerBot} x2={s.x1} y2={outerBot} stroke={PAL.charcoal} strokeWidth={4.5} />
-      {/* section cut ends */}
-      {[s.x0, s.x1].map((x) => (
-        <g key={x}>
-          <line x1={x} y1={outerTop} x2={x} y2={innerTop(s, x)} stroke={PAL.charcoal} strokeWidth={4.5} strokeLinecap="round" />
-          <line x1={x} y1={outerBot} x2={x} y2={innerBottom(s, x)} stroke={PAL.charcoal} strokeWidth={4.5} strokeLinecap="round" />
-        </g>
-      ))}
+      {/* cut ends: elliptical cross-sections give the cutaway its depth */}
+      {[s.x0, s.x1].map((x, i) => {
+        const ry = s.R + s.T;
+        const rx = ry * 0.22;
+        return (
+          <g key={x}>
+            <ellipse cx={x} cy={s.cy} rx={rx} ry={ry} fill={i === 1 ? ART.wallMid : 'none'} stroke={PAL.charcoal} strokeWidth={4.5} />
+            <ellipse cx={x} cy={s.cy} rx={rx * (s.R / ry)} ry={s.R} fill={i === 1 ? ART.lumenDark : 'none'} stroke={PAL.charcoal} strokeWidth={3} />
+          </g>
+        );
+      })}
       {children}
     </g>
   );

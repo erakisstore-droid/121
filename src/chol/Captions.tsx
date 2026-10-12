@@ -1,5 +1,5 @@
 import type React from 'react';
-import {BEATS, CAPTIONS, PAL} from './config';
+import {BEATS, CAPTIONS, PAL, TOTAL_SECONDS} from './config';
 import {EASE, ramp} from '../ms/lib/anim';
 import {useAbsT} from '../ms/lib/time';
 import {FONT_AR} from '../ms/config';
@@ -45,7 +45,7 @@ const Words: React.FC<{text: string; t: number; a: number; size: number; weight:
         fontFamily: FONT_AR,
         fontSize: size,
         fontWeight: weight,
-        lineHeight: 1.3,
+        lineHeight: 1.18,
         color: PAL.charcoal,
         opacity: o,
       }}
@@ -69,9 +69,10 @@ export const Captions: React.FC = () => {
     <>
       {spans.map((s) => {
         if (t < s.a - 0.01 || t > s.b + 0.01) return null;
-        const outK = ramp(t, s.b - 0.2, s.b);
+        // the final phrase holds to the last frame
+        const outK = s.b >= TOTAL_SECONDS ? 0 : ramp(t, s.b - 0.2, s.b);
         const longest = Math.max(...s.text.split('|').map((l) => l.length));
-        const size = longest > 20 ? 64 : 74;
+        const size = longest > 20 ? 70 : longest > 14 ? 80 : 90;
         return (
           <div key={`${s.a}-${s.text}`} style={{position: 'absolute', left: 90, top: 258, width: 810, translate: `0 ${-outK * 10}px`}}>
             <Words text={s.text} t={t} a={s.a} size={size} weight={800} o={1 - outK} />

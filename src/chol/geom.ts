@@ -27,7 +27,7 @@ export const arteryAt = (t: number): ArterySpec => {
   return {
     x0: ARTERY_BASE.x0,
     x1: ARTERY_BASE.x1,
-    cy: mix(ARTERY_BASE.cy, 1330, down),
+    cy: mix(ARTERY_BASE.cy, 1400, down),
     R: ARTERY_BASE.R * sc,
     T: ARTERY_BASE.T * sc,
     plaques: [{x: PLAQUE_X, w: 175, h: plaqueH(t), side: 'top'}],
@@ -70,7 +70,7 @@ export const CARD_B = {x: 110, y: 900, w: 790} as const;
 export const ASSESS = {x: 495, y: 1268} as const;
 
 /* ---------- Page p5: DNA + calendar ---------- */
-export const DNA = {x: 300, y0: 560, y1: 1120, amp: 50, turns: 3} as const;
+export const DNA = {x: 330, y0: 580, y1: 1100, amp: 64, turns: 2.6} as const;
 export const NODES = {parent: {x: 720, y: 640}, you: {x: 720, y: 1040}} as const;
 export const CALENDAR = {x: 190, y: 640, w: 700, h: 560, rings: 6} as const;
 export const TRACK = {y: 1350, xStart: 820, xEnd: 260} as const;

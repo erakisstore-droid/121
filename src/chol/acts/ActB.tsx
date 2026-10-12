@@ -1,6 +1,6 @@
 import type React from 'react';
-import {PAL, at} from '../config';
-import {BrainOutline, Heart} from '../art/objects';
+import {ART, PAL, at} from '../config';
+import {BrainNode, HeartLine, NodeDot, PersonGlyph} from '../art/objects';
 import {LdlDot} from '../art/Artery';
 import {YOUTH, arteryAt, youthX, yearsScroll} from '../geom';
 import {mix, ramp} from '../../ms/lib/anim';
@@ -13,8 +13,8 @@ const Branch: React.FC<{d: string; p: number; o: number}> = ({d, p, o}) =>
   p <= 0.001 ? null : (
     <g opacity={o}>
       <path d={d} fill="none" stroke={PAL.charcoal} strokeWidth={44} strokeLinecap="round" {...drawOn(d, p)} />
-      <path d={d} fill="none" stroke={PAL.offWhite} strokeWidth={36} strokeLinecap="round" {...drawOn(d, p)} />
-      <path d={d} fill="none" stroke={PAL.orangeDeep} strokeWidth={16} strokeLinecap="round" {...drawOn(d, p)} />
+      <path d={d} fill="none" stroke={ART.wallMid} strokeWidth={36} strokeLinecap="round" {...drawOn(d, p)} />
+      <path d={d} fill="none" stroke={ART.lumenDark} strokeWidth={16} strokeLinecap="round" {...drawOn(d, p)} />
     </g>
   );
 
@@ -37,8 +37,8 @@ export const ActB: React.FC<{from: number}> = ({from}) => {
   const br = ramp(t, at(5, 0.15), at(5, 0.45));
   const organs = ramp(t, at(5, 0.35), at(5, 0.5));
   const bOut = ramp(t, at(6, 0), at(6, 0.2));
-  const up = `M 250 ${outerTop + 6} C 250 ${outerTop - 50}, 250 ${outerTop - 70}, 250 650`;
-  const down = `M 250 ${outerBot - 6} C 250 ${outerBot + 40}, 250 ${outerBot + 60}, 250 1338`;
+  const up = `M 250 ${outerTop + 6} C 250 ${outerTop - 50}, 250 ${outerTop - 70}, 250 690`;
+  const down = `M 250 ${outerBot - 6} C 250 ${outerBot + 40}, 250 ${outerBot + 60}, 250 1330`;
   const inset = ramp(t, at(5, 0.45), at(5, 0.6)) * (1 - ramp(t, at(5, 0.92), at(6, 0.1)));
   const clot = ramp(t, at(5, 0.58), at(5, 0.8));
 
@@ -59,31 +59,36 @@ export const ActB: React.FC<{from: number}> = ({from}) => {
         </defs>
         <Branch d={up} p={br} o={1 - bOut} />
         <Branch d={down} p={br} o={1 - bOut} />
-        <BrainOutline cx={250} cy={560} s={88} opacity={organs * (1 - bOut)} />
-        <Heart cx={250} cy={1420} s={78} opacity={organs * (1 - bOut)} />
+        <BrainNode cx={250} cy={600} r={90} opacity={organs * (1 - bOut)} />
+        <g opacity={organs * (1 - bOut)}>
+          <circle cx={250} cy={1430} r={100} fill={PAL.offWhite} stroke={PAL.charcoal} strokeWidth={4} />
+          <HeartLine cx={250} cy={1440} s={62} />
+        </g>
         {inset > 0.001 ? (
           <g opacity={inset}>
             <defs>
               <clipPath id="cb-inset">
-                <circle cx={745} cy={565} r={102} />
+                <circle cx={750} cy={610} r={102} />
               </clipPath>
             </defs>
             <line x1={560} y1={outerTop + 10} x2={690} y2={640} stroke={PAL.charcoal} strokeWidth={3} strokeDasharray="8 7" />
-            <circle cx={745} cy={565} r={106} fill={PAL.offWhite} stroke={PAL.charcoal} strokeWidth={5} />
+            <circle cx={750} cy={610} r={106} fill={PAL.offWhite} stroke={PAL.charcoal} strokeWidth={5} />
             <g clipPath="url(#cb-inset)">
-              <rect x={630} y={460} width={240} height={60} fill={PAL.offWhite} />
-              <rect x={630} y={520} width={240} height={140} fill={PAL.orangeDeep} />
-              <path d="M 630 520 L 680 520 C 700 520 705 566 745 566 C 785 566 790 520 810 520 L 870 520 L 870 470 L 630 470 Z" fill={PAL.beige} stroke={PAL.charcoal} strokeWidth={3.5} />
-              <path d="M 630 520 L 680 520 C 700 520 705 566 745 566 C 785 566 790 520 810 520 L 870 520" fill="none" stroke={PAL.charcoal} strokeWidth={4} />
+              <g transform="translate(5 45)">
+              <rect x={630} y={460} width={240} height={60} fill={ART.wallMid} />
+              <rect x={630} y={520} width={240} height={140} fill={ART.lumenMid} />
+              <path d="M 630 520 L 680 520 C 700 520 705 566 750 566 C 785 566 790 520 810 520 L 870 520 L 870 470 L 630 470 Z" fill={ART.plaque} stroke={PAL.charcoal} strokeWidth={3.5} />
+              <path d="M 630 520 L 680 520 C 700 520 705 566 750 566 C 785 566 790 520 810 520 L 870 520" fill="none" stroke={PAL.charcoal} strokeWidth={4} />
               {[
                 [735, 578, 13],
                 [756, 584, 11],
-                [745, 596, 10],
+                [750, 596, 10],
                 [722, 590, 9],
               ].map(([x, y, r], i) => (
                 <circle key={i} cx={x} cy={y} r={r * clot} fill={PAL.offWhite} stroke={PAL.charcoal} strokeWidth={3} />
               ))}
               {clot > 0.5 ? <path d="M 718 584 L 770 600 M 728 600 L 762 576" stroke={PAL.charcoal} strokeWidth={2.5} opacity={(clot - 0.5) * 2} /> : null}
+            </g>
             </g>
           </g>
         ) : null}
@@ -110,15 +115,19 @@ export const ActB: React.FC<{from: number}> = ({from}) => {
                 </g>
               );
             })}
+            <NodeDot x={YOUTH.x0} y={outerBot} o={youth} />
+            {[55, 45, 35].map((a, i) => (
+              <PersonGlyph key={a} x={youthX(a)} y={YOUTH.y - 24} h={104 - i * 4} opacity={ramp(t, at(6, 0.3 + i * 0.1), at(6, 0.42 + i * 0.1)) * (1 - ticksOut)} />
+            ))}
             {mini > 0.001 ? (
               <g opacity={mini * (1 - ticksOut)}>
                 <line x1={youthX(25)} y1={YOUTH.y} x2={youthX(25)} y2={YOUTH.y - 70} stroke={PAL.charcoal} strokeWidth={4} />
                 <circle cx={youthX(25)} cy={YOUTH.y - 160} r={92} fill={PAL.offWhite} stroke={PAL.charcoal} strokeWidth={5} />
                 <g clipPath="url(#cb-mini)">
-                  <rect x={youthX(25) - 100} y={YOUTH.y - 252} width={200} height={50} fill={PAL.offWhite} />
-                  <rect x={youthX(25) - 100} y={YOUTH.y - 202} width={200} height={84} fill={PAL.orangeDeep} />
-                  <path d={`M ${youthX(25) - 100} ${YOUTH.y - 202} L ${youthX(25) - 40} ${YOUTH.y - 202} C ${youthX(25) - 22} ${YOUTH.y - 202} ${youthX(25) - 18} ${YOUTH.y - 186} ${youthX(25)} ${YOUTH.y - 186} C ${youthX(25) + 18} ${YOUTH.y - 186} ${youthX(25) + 22} ${YOUTH.y - 202} ${youthX(25) + 40} ${YOUTH.y - 202} L ${youthX(25) + 100} ${YOUTH.y - 202} L ${youthX(25) + 100} ${YOUTH.y - 222} L ${youthX(25) - 100} ${YOUTH.y - 222} Z`} fill={PAL.beige} stroke={PAL.charcoal} strokeWidth={3} />
-                  <rect x={youthX(25) - 100} y={YOUTH.y - 118} width={200} height={30} fill={PAL.offWhite} />
+                  <rect x={youthX(25) - 100} y={YOUTH.y - 252} width={200} height={50} fill={ART.wallMid} />
+                  <rect x={youthX(25) - 100} y={YOUTH.y - 202} width={200} height={84} fill={ART.lumenMid} />
+                  <path d={`M ${youthX(25) - 100} ${YOUTH.y - 202} L ${youthX(25) - 40} ${YOUTH.y - 202} C ${youthX(25) - 22} ${YOUTH.y - 202} ${youthX(25) - 18} ${YOUTH.y - 186} ${youthX(25)} ${YOUTH.y - 186} C ${youthX(25) + 18} ${YOUTH.y - 186} ${youthX(25) + 22} ${YOUTH.y - 202} ${youthX(25) + 40} ${YOUTH.y - 202} L ${youthX(25) + 100} ${YOUTH.y - 202} L ${youthX(25) + 100} ${YOUTH.y - 222} L ${youthX(25) - 100} ${YOUTH.y - 222} Z`} fill={ART.plaque} stroke={PAL.charcoal} strokeWidth={3} />
+                  <rect x={youthX(25) - 100} y={YOUTH.y - 118} width={200} height={30} fill={ART.wallMid} />
                   <line x1={youthX(25) - 100} y1={YOUTH.y - 118} x2={youthX(25) + 100} y2={YOUTH.y - 118} stroke={PAL.charcoal} strokeWidth={3} />
                   <LdlDot x={youthX(25) - 50 + ((t * 60) % 100)} y={YOUTH.y - 150} r={9} />
                 </g>

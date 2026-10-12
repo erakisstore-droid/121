@@ -3,7 +3,7 @@ import type React from 'react';
 import {spring, useVideoConfig} from 'remotion';
 import {PAL, at} from '../config';
 import {HeroTube} from '../art/hero';
-import {Heart} from '../art/objects';
+import {HeartLine, NodeDot} from '../art/objects';
 import {AGE, ARTERY_BASE, HEART1, TUBE1, ageX} from '../geom';
 import {EASE, mix, ramp} from '../../ms/lib/anim';
 import {drawOn} from '../../ms/lib/paths';
@@ -112,7 +112,9 @@ export const ActA: React.FC<{from: number}> = ({from}) => {
       <g transform={`translate(${T.x + T.w / 2} ${T.y + T.h}) scale(${1 + 0.04 * tubeNudge}) translate(${-(T.x + T.w / 2)} ${-(T.y + T.h)})`}>
         <HeroTube id="tube1" x={T.x} y={T.y} w={T.w} h={T.h} level={level} build={build} label={label} opacity={Math.min(ramp(t, 0, 0.08), 1 - tubeFade)} />
       </g>
-      <Heart cx={heart.x} cy={heart.y} s={heart.s} beat={arrive} opacity={heartIn * (1 - ramp(t, at(4, 0), at(4, 0.08)))} />
+      <HeartLine cx={heart.x} cy={heart.y} s={heart.s * 0.95} beat={arrive} opacity={heartIn * (1 - ramp(t, at(4, 0), at(4, 0.08)))} />
+      <NodeDot x={T.x + T.w} y={T.y + T.h * 0.35} o={conn * fade2} />
+      <NodeDot x={HEART1.x - 150} y={HEART1.y} o={ramp(conn, 0.95, 1) * fade2} />
     </svg>
   );
 };

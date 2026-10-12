@@ -1,9 +1,9 @@
 import type React from 'react';
 import {PAL, SOURCES, at} from '../config';
 import {pageDelta} from '../Board';
-import {Stethoscope} from '../art/objects';
+import {NodeDot, Stethoscope} from '../art/objects';
 import {LabReport} from '../art/Report';
-import {tubeLabelRect} from '../art/hero';
+import {LdlCluster, tubeLabelRect} from '../art/hero';
 import {ASSESS, CARD_B, DNA, LDL_CARD, REPORT, SCALE, TUBE3, reportRowRect} from '../geom';
 import {EASE, mix, mixRect, ramp} from '../../ms/lib/anim';
 import {drawOn} from '../../ms/lib/paths';
@@ -56,7 +56,12 @@ export const ActD: React.FC<{from: number}> = ({from}) => {
     <>
       <svg width={1080} height={1920} style={{position: 'absolute', inset: 0, overflow: 'visible'}}>
         {thread > 0.001 && threadOut < 1 ? <path d={threadD} fill="none" stroke={PAL.charcoal} strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" opacity={1 - threadOut} {...drawOn(threadD, thread)} /> : null}
-        {dnaLine > 0.001 ? <path d={toDna} fill="none" stroke={PAL.charcoal} strokeWidth={6} strokeLinecap="round" {...drawOn(toDna, dnaLine)} /> : null}
+        {dnaLine > 0.001 ? (
+          <>
+            <path d={toDna} fill="none" stroke={PAL.charcoal} strokeWidth={5} strokeLinecap="round" {...drawOn(toDna, dnaLine)} />
+            <NodeDot x={SCALE.x0} y={SCALE.y} />
+          </>
+        ) : null}
         {travel > 0.001 && unfold < 1 ? (
           <g>
             <CardRect r={card} radius={mix(8, 28, unfold)} />
@@ -74,6 +79,7 @@ export const ActD: React.FC<{from: number}> = ({from}) => {
           <g opacity={Math.min(1, iso * 3)}>
             <CardRect r={rowR} />
             <rect x={rowR.x + 14} y={rowR.y + 14} width={12} height={rowR.h - 28} rx={6} fill={PAL.orangeDeep} />
+            <LdlCluster x={rowR.x + mix(20, 110, iso)} y={rowR.y + rowR.h / 2} r={mix(24, 68, iso)} opacity={iso} rot={t * 8} />
           </g>
         ) : null}
         {scaleK > 0.001 ? (
@@ -86,6 +92,7 @@ export const ActD: React.FC<{from: number}> = ({from}) => {
         {assess > 0.001 ? (
           <g>
             <path d={ASSESS_PATH} fill="none" stroke={PAL.charcoal} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" {...drawOn(ASSESS_PATH, assess)} />
+            <NodeDot x={SCALE.x1 + 20} y={SCALE.y} />
             <circle cx={ASSESS.x} cy={ASSESS.y} r={76 * ramp(assess, 0.6, 1)} fill={PAL.offWhite} stroke={PAL.charcoal} strokeWidth={4} />
             <Stethoscope cx={ASSESS.x - 4} cy={ASSESS.y + 8} s={60} opacity={ramp(assess, 0.75, 1)} />
           </g>
@@ -93,7 +100,7 @@ export const ActD: React.FC<{from: number}> = ({from}) => {
       </svg>
       {iso > 0.001 ? (
         <>
-          <Txt x={rowR.x + 50} y={rowR.y + rowR.h / 2 - mix(30, 52, iso)} w={rowR.w - 70} size={mix(46, 72, iso)} align="left" dir="ltr" opacity={Math.min(1, iso * 3)} nowrap>
+          <Txt x={rowR.x + mix(50, 200, iso)} y={rowR.y + rowR.h / 2 - mix(30, 46, iso)} w={rowR.w - 220} size={mix(46, 62, iso)} align="left" dir="ltr" opacity={Math.min(1, iso * 3)} nowrap>
             LDL-C <span style={{opacity: thr}}>≥ 190 mg/dL</span>
           </Txt>
           <Txt x={tickX - 80} y={SCALE.y + 34} w={160} size={40} weight={800} dir="ltr" opacity={ramp(scaleK, 0.75, 1)}>

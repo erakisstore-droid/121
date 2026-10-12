@@ -43,11 +43,11 @@ export const at = (id: number, f = 0) => {
 /** Key phrases (not narration subtitles). `from` = fraction of the beat; `|` forces a line break. */
 export type CaptionLine = {readonly text: string; readonly sub?: string; readonly from?: number};
 export const CAPTIONS: Record<number, readonly CaptionLine[]> = {
-  1: [{text: 'التحليل ده ممكن|ينقذ حياتك!'}],
+  1: [{text: 'التحليل ده|ممكن ينقذ حياتك!'}],
   2: [{text: 'عدّيت العشرين؟'}],
-  3: [{text: 'مرتفع… من غير أعراض'}],
-  4: [{text: 'LDL'}, {text: 'لويحات داخل جدار الشريان', from: 0.36}],
-  5: [{text: 'خطر أعلى للقلب والمخ'}],
+  3: [{text: 'مرتفع…|من غير أعراض'}],
+  4: [{text: 'LDL'}, {text: 'لويحات داخل|جدار الشريان', from: 0.36}],
+  5: [{text: 'خطر أعلى|للقلب والمخ'}],
   6: [{text: 'ممكن تبدأ بدري'}],
   7: [{text: 'الفحص من سن 19'}],
   8: [{text: 'اعرف مستواك بدري'}],
@@ -57,6 +57,8 @@ export const CAPTIONS: Record<number, readonly CaptionLine[]> = {
   12: [{text: 'ممكن يكون وراثي'}],
   13: [{text: 'غالبًا كل 5 سنين', sub: 'أقرب حسب الخطورة'}],
   14: [{text: 'اكتشاف بدري…|حماية على المدى الطويل'}],
+  15: [{text: 'كام سنة عندك؟'}],
+  16: [{text: 'آخر تحليل كان إمتى؟'}],
 };
 
 /** Original attachments (byte-identical copies; only their containers move). */
@@ -143,3 +145,20 @@ export const SFX_CUES: readonly {beat: number; f: number; kind: 'whoosh' | 'clic
   {beat: 14, f: 0.05, kind: 'whoosh', volume: 0.14},
   {beat: 15, f: 0.05, kind: 'click', volume: 0.12},
 ];
+
+/**
+ * Illustration tones taken from the approved style board (artery tissue, blood
+ * cells, plaque). Used only inside the scientific illustrations.
+ */
+export const ART = {
+  wallLight: '#F6B7A0',
+  wallMid: '#EC9A80',
+  wallDeep: '#D9765D',
+  lumenDark: '#A83C27',
+  lumenMid: '#C24E33',
+  cell: '#E4562E',
+  cellLight: '#F7875A',
+  plaque: '#F6DA9A',
+  plaqueDeep: '#EDBF62',
+  cap: '#3A3B3D',
+} as const;
