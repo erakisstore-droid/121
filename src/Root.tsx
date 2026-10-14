@@ -18,6 +18,8 @@ import { MSSpasticityFootDrop } from "./ms/MSSpasticityFootDrop";
 import { MS_VIDEO, totalFrames } from "./ms/config";
 import { CholesterolEarlyScreening } from "./chol/CholesterolEarlyScreening";
 import { CH_VIDEO, totalFrames as cholFrames } from "./chol/config";
+import { Omega3MS } from "./omega/Omega3MS";
+import { O_VIDEO, totalFrames as omegaFrames } from "./omega/config";
 
 /**
  * Registers every composition shown in Remotion Studio.
@@ -173,6 +175,16 @@ export const RemotionRoot: React.FC = () => {
         height={CH_VIDEO.height}
         fps={CH_VIDEO.fps}
         durationInFrames={cholFrames(CH_VIDEO.fps)}
+      />
+
+      {/* Medical explainer: 1080×1920, 60 fps, 90 s. Timing lives in src/omega/config.ts */}
+      <Composition
+        id="Omega3MS"
+        component={Omega3MS}
+        width={O_VIDEO.width}
+        height={O_VIDEO.height}
+        fps={O_VIDEO.fps}
+        durationInFrames={omegaFrames(O_VIDEO.fps)}
       />
 
       {/* @new-compositions: `npm run new -- <Name>` inserts registrations above this line. */}

@@ -65,6 +65,19 @@ out/                       Render output (git-ignored)
 - Original sources: `public/chol/source-*.png` (byte-identical; only the container zooms/pans).
 - Render: `npx remotion render CholesterolEarlyScreening renders/cholesterol-screening-63s.mp4 --crf=18`
 
+## Omega3MS (medical explainer, 1080×1920, 60 fps, 90 s)
+
+- Source: `src/omega/`. `config.ts` holds `BEATS` (21 beats, seconds), `CAPTIONS`
+  (`|` = line break, `sub` = secondary line), `DATA` (exact study values: HR 0.79,
+  95% CI 0.67–0.94, 16 RCTs / 127,771 total, MS cohort 839 / 5 years), `SOURCES`
+  (callout regions in image pixels), `PAGES` and `CAMERA` keyframes (one take across a board).
+- Acts in `src/omega/acts/` draw in page-local coordinates; art lives in `src/omega/art/`
+  (`capsule`, `charts` incl. `HazardRatioPlot` / `CohortTimeline`, `research` for source viewports).
+- Arabic captions use `KineticArabicText` (`frame.tsx`): runs of Latin tokens such as
+  "EPA + DHA" animate as one bidi-isolated word.
+- Sources: `public/omega/source-*.{webp,png}` (original bytes, never stretched).
+- Render: `npx remotion render Omega3MS renders/omega-3-ms-90s.mp4 --crf=18`
+
 ## Commands
 
 | Task | Command |
