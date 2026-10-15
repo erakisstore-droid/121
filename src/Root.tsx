@@ -20,6 +20,8 @@ import { CholesterolEarlyScreening } from "./chol/CholesterolEarlyScreening";
 import { CH_VIDEO, totalFrames as cholFrames } from "./chol/config";
 import { Omega3MS } from "./omega/Omega3MS";
 import { O_VIDEO, totalFrames as omegaFrames } from "./omega/config";
+import { CoordinationDrills } from "./drills/CoordinationDrills";
+import { D_VIDEO, totalFrames as drillsFrames } from "./drills/config";
 
 /**
  * Registers every composition shown in Remotion Studio.
@@ -185,6 +187,16 @@ export const RemotionRoot: React.FC = () => {
         height={O_VIDEO.height}
         fps={O_VIDEO.fps}
         durationInFrames={omegaFrames(O_VIDEO.fps)}
+      />
+
+      {/* Tennis coordination drills, SFX only: 1080×1920, 60 fps, 18 s. Timing lives in src/drills/config.ts */}
+      <Composition
+        id="CoordinationDrills"
+        component={CoordinationDrills}
+        width={D_VIDEO.width}
+        height={D_VIDEO.height}
+        fps={D_VIDEO.fps}
+        durationInFrames={drillsFrames(D_VIDEO.fps)}
       />
 
       {/* @new-compositions: `npm run new -- <Name>` inserts registrations above this line. */}

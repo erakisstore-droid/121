@@ -78,6 +78,16 @@ out/                       Render output (git-ignored)
 - Sources: `public/omega/source-*.{webp,png}` (original bytes, never stretched).
 - Render: `npx remotion render Omega3MS renders/omega-3-ms-90s.mp4 --crf=18`
 
+## CoordinationDrills (tennis coordination drills, 1080×1920, 60 fps, 18 s, SFX only)
+
+- Source: `src/drills/`. Motion analysed from a reference reel (one static take, six ball
+  drills, seven headlines). `config.ts` holds `DRILLS` (time window, `period`, ball events),
+  `BEATS` (Arabic headlines, `|` = line break) and derives `SFX_CUES` from the drill cycles.
+- `poses.ts` solves each drill as a periodic pose (pelvis, feet, hands, ball); `Figure.tsx`
+  resolves knees/elbows with IK and draws the faceless brand figure. No voiceover, no music.
+- SFX: `public/drills/bounce.wav`, `catch.wav` (original, generated with FFmpeg) + `audio/whoosh.wav`.
+- Render: `npx remotion render CoordinationDrills renders/coordination-drills-18s.mp4 --crf=18`
+
 ## Commands
 
 | Task | Command |
